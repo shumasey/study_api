@@ -9,7 +9,7 @@ DB_CONFIG = {
     "dbname": "demo",       # имя базы данных
     "user": "postgres",     # имя пользователя
     "password": "1", # ваш пароль
-    "host": "172.17.0.1",    # адрес (если база на том же ПК)
+    "host": "host.docker.internal",    # адрес (если база на том же ПК)
     "port": "5432"          # стандартный порт PostgreSQL
 }
 
