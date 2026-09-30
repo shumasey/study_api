@@ -1,16 +1,18 @@
+import os
 from fastapi import FastAPI, HTTPException
 import psycopg
 from psycopg.rows import dict_row
 
 app = FastAPI(title="Avia REST API")
 
-# Настройки подключения к вашей базе данных (замените на свои данные)
+# Теперь настройки считываются из переменных окружения.
+# Если переменная не найдена, подставится значение по умолчанию (второй аргумент)
 DB_CONFIG = {
-    "dbname": "demo",       # имя базы данных
-    "user": "postgres",     # имя пользователя
-    "password": "1", # ваш пароль
-    "host": "host.docker.internal",    # адрес (если база на том же ПК)
-    "port": "5432"          # стандартный порт PostgreSQL
+    "dbname": os.getenv("DB_NAME", "demo"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "password"),
+    "host": os.getenv("DB_HOST", "host.docker.internal"),
+    "port": os.getenv("DB_PORT", "5432")
 }
 
 def get_db_connection():
