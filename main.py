@@ -43,27 +43,49 @@ def get_aircrafts():
     
     return aircrafts
 
-# --- НАШ НОВЫЙ ЭНДПОИНТ ДЛЯ РЕЙСОВ ---
-@app.get("/api/v1/flights", summary="Получить список рейсов с фильтром по аэропорту")
-def get_flights(departure_airport: str = None, limit: int = 20):
+# --- НОВЫЙ ЭНДПОИНТ: ПОЛУЧЕНИЕ СПИСКА АЭРОПОРТОВ ---
+@app.get("/api/v1/airports", summary="Получить список всех аэропортов для выпадающего списка")
+def get_airports():
     """
-    Возвращает список рейсов.
-    - **departure_airport**: код аэропорта отправления (например, DME, SVO) — необязательный параметр.
-    - **limit**: количество записей на странице (по умолчанию 20).
+    Возвращает список кодов, названий и городов всех аэропортов на русском языке.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Базовый SQL-запрос к таблице рейсов (flights)
+    # Извлекаем данные, вытаскивая русский язык из JSON-полей airport_name и city
+    query = """
+        SELECT 
+            airport_code, 
+            airport_name->>'ru' AS airport_name, 
+            city->>'ru' AS city 
+        FROM bookings.airports_data
+        ORDER BY city->>'ru';
+    """
+    try:
+        cursor.execute(query)
+        airports = cursor.fetchall()
+        return airports
+    except Exception as e:
+        print(f"Ошибка чтения аэропортов: {e}")
+        raise HTTPException(status_code=500, detail="Ошибка при чтении данных об аэропортах")
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# --- ОБНОВЛЕННЫЙ ЭНДПОИНТ РЕЙСОВ ---
+@app.get("/api/v1/flights", summary="Получить список рейсов с фильтром по аэропорту")
+def get_flights(departure_airport: str = None, limit: int = 20):
+    # Код этого эндпоинта остается точно таким же, как был на прошлом шаге!
+    conn = get_db_connection()
+    cursor = conn.cursor()
     query = "SELECT flight_id, flight_no, scheduled_departure, scheduled_arrival, departure_airport, arrival_airport, status FROM flights"
     params = []
     
-    # Если пользователь передал код аэропорта, добавляем фильтрацию WHERE
     if departure_airport:
         query += " WHERE departure_airport = %s"
-        params.append(departure_airport.upper()) # приводим к верхнему регистру (Dme -> DME)
+        params.append(departure_airport.upper())
         
-    # Добавляем ограничение на количество строк, чтобы не перегружать память
     query += " LIMIT %s;"
     params.append(limit)
     
