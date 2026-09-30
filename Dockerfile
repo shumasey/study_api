@@ -9,7 +9,8 @@ COPY requirements.txt .
 
 # Обновляем pip и устанавливаем библиотеки
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt &&\
+    pip install --no-cache-dir psycopg[binary]==3.2.4
 
 # Копируем весь оставшийся код нашего API
 COPY . .
