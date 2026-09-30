@@ -24,4 +24,4 @@ jobs:
         context: .
         push: true
         # Замените 'ваш-логин-dockerhub' на ваш реальный логин
-        tags: ваш-логин-dockerhub/avia-rest-api:latest
+        tags: shumasey-dockerhub/avia-rest-api:latest
