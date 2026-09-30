@@ -44,47 +44,39 @@ def get_aircrafts():
     return aircrafts
 
 # --- НОВЫЙ ЭНДПОИНТ: ПОЛУЧЕНИЕ СПИСКА АЭРОПОРТОВ ---
-@app.get("/api/v1/airports", summary="Получить список всех аэропортов для выпадающего списка")
-def get_airports():
+@app.get("/api/v1/flights", summary="Получить список рейсов с фильтром по названию города")
+def get_flights(city_name: str = None, limit: int = 20):
     """
-    Возвращает список кодов, названий и городов всех аэропортов на русском языке.
+    Возвращает список рейсов.
+    - **city_name**: название города отправления на русском языке (например: Москва, Сочи, Анапа) — необязательный параметр.
+    - **limit**: количество записей на странице (по умолчанию 20).
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Извлекаем данные, вытаскивая русский язык из JSON-полей airport_name и city
+    # 1. Пишем запрос со связыванием таблиц через JOIN.
+    # Нам нужно вытащить данные из flights, но проверить город в bookings.airports_data
     query = """
         SELECT 
-            airport_code, 
-            airport_name->>'ru' AS airport_name, 
-            city->>'ru' AS city 
-        FROM bookings.airports_data
-        ORDER BY city->>'ru';
+            f.flight_id, 
+            f.flight_no, 
+            f.scheduled_departure, 
+            f.scheduled_arrival, 
+            f.departure_airport, 
+            f.arrival_airport, 
+            f.status,
+            a.city->>'ru' AS departure_city  -- Добавим в ответ название города для наглядности
+        FROM flights f
+        JOIN bookings.airports_data a ON f.departure_airport = a.airport_code
     """
-    try:
-        cursor.execute(query)
-        airports = cursor.fetchall()
-        return airports
-    except Exception as e:
-        print(f"Ошибка чтения аэропортов: {e}")
-        raise HTTPException(status_code=500, detail="Ошибка при чтении данных об аэропортах")
-    finally:
-        cursor.close()
-        conn.close()
-
-
-# --- ОБНОВЛЕННЫЙ ЭНДПОИНТ РЕЙСОВ ---
-@app.get("/api/v1/flights", summary="Получить список рейсов с фильтром по аэропорту")
-def get_flights(departure_airport: str = None, limit: int = 20):
-    # Код этого эндпоинта остается точно таким же, как был на прошлом шаге!
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    query = "SELECT flight_id, flight_no, scheduled_departure, scheduled_arrival, departure_airport, arrival_airport, status FROM flights"
     params = []
     
-    if departure_airport:
-        query += " WHERE departure_airport = %s"
-        params.append(departure_airport.upper())
+    # 2. Если передан город, добавляем фильтрацию по текстовому полю внутри JSON
+    if city_name:
+        # Использование ILIKE делает поиск регистронезависимым (москва, Москва, МОСКВА)
+        # % позволяет искать по части слова (например, "Моск" найдет "Москва")
+        query += " WHERE a.city->>'ru' ILIKE %s"
+        params.append(f"%{city_name}%")
         
     query += " LIMIT %s;"
     params.append(limit)
