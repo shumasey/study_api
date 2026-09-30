@@ -9,5 +9,7 @@ services:
     # Аналог флага --add-host. Позволяет контейнеру видеть базу на хосте Windows
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
     # Автоматически перезапустит контейнер, если он упадет или перезагрузится Docker
     restart: always
