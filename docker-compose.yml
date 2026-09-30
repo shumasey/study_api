@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  avia-api:
+    image: shumasey/avia-rest-api:latest
+    container_name: avia-api-container
+    ports:
+      - "8000:8000"
+    # Аналог флага --add-host. Позволяет контейнеру видеть базу на хосте Windows
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Автоматически перезапустит контейнер, если он упадет или перезагрузится Docker
+    restart: always
